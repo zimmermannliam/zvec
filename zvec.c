@@ -32,22 +32,21 @@ ZVec * zvec_create(size_t cap)
     return zv;
 }
 
-void zvec_destroy(ZVec ** zv)
+void zvec_destroy(ZVec * zv)
 /**********************************************************************
  * description:     destroy a ZVec
  *
- * arguments:       zv  zvector to destroy
+ * arguments:       zv  
  *
  * return:          NONE
  * 
  * side effects:    zv is now free()d.
 **********************************************************************/
 {
-    zvec_check((*zv), __FILE__, __LINE__, NULL);
-    free((*zv)->data);
-    (*zv)->data = NULL;
-    free(*zv);
-    *zv = NULL;
+    zvec_check(zv, __FILE__, __LINE__, NULL);
+    free(zv->data);
+    zv->data = NULL;
+    free(zv);
 }
 
 void zvec_extend(ZVec * zv, size_t new_size)
@@ -195,12 +194,11 @@ void zvec_put(ZVec * zv, TYPE d, size_t loc)
 **********************************************************************/
 {
     zvec_check(zv, __FILE__, __LINE__, NULL);
-    if(loc > zv->size)
+    if(loc > zv->cap)
     {
         if(zv->cap > SIZE_MAX / zv->cap_multiplier)
         {
                 zvec_extend(zv, (size_t) (zv->cap * zv->cap_multiplier));
-                zvec_zero_fill(zv, zv->size, zv->cap);
                 zvec_check(zv, __FILE__, __LINE__, NULL);
         }
         else
@@ -211,5 +209,22 @@ void zvec_put(ZVec * zv, TYPE d, size_t loc)
         }
     }
     zv->data[loc] = d;
+    if(zv->size < loc)
+    {
+        zv->size = loc;
+    }
 }
 
+size_t zvec_size(ZVec * zv)
+/**********************************************************************
+ * description:     get size of a zvec
+ *
+ * arguments:       zv      zvec to get the size of
+ *
+ * return:          size of zv
+ * 
+ * side effects:    NONE
+**********************************************************************/
+{
+    return zv->size;
+}
