@@ -4,16 +4,18 @@
 
 int main()
 {
-    uint16_t i;
-    ZVec * zv = (ZVec *) zvec_create(16);
-    for(i = 0; i < 16; ++i)
+    uint16_t i = 0;
+    ZVec * zv = (ZVec *) zvec_create(9);
+    for(i = 0; i < 10; ++i)
     {
-        zvec_put(zv, i, i);
+        zvec_push(zv, i);
     }
-    for(i = 0; i < zvec_size(zv); ++i)
+    for(i = 0; i < 10; ++i)
     {
         printf("%u ", zvec_at(zv, i));
     }
+    printf("\n");
     zvec_destroy(zv);
+
     return 0;
 }

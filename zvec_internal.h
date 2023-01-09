@@ -1,12 +1,12 @@
 #ifndef ZVEC_INTERNAL_H
 #define ZVEC_INTERNAL_H
-/**********************************************************************
+/*******************************************************************************
  * by               Liam Zimmermann
  * 
  * file name	    zvec_internal.h
  *
  * description      ZVec internal logic header
-**********************************************************************/
+ ******************************************************************************/
 #include "type.h"
 #include <stdint.h>
 #include <stdlib.h>
@@ -22,6 +22,5 @@ typedef struct
 void zvec_check(ZVec * zv, const char * file, uint16_t line,
                 const char * msg);
 
-void zvec_error(const char * msg, const char * file, uint16_t line);
 
 #endif

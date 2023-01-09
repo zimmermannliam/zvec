@@ -1,4 +1,4 @@
-/**********************************************************************
+/*******************************************************************************
  * by               Liam Zimmermann
  * 
  * file name	    code.c
@@ -6,15 +6,16 @@
  * description      sample code file
  *
  * header(s)        zvec.h
-                    zvec_internal.h
-**********************************************************************/
+ *                  zvec_internal.h
+ ******************************************************************************/
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 #include "zvec_internal.h"
 
 ZVec * zvec_create(size_t cap)
-/**********************************************************************
+/*******************************************************************************
  * description:     initialize a ZVec
  *
  * arguments:       cap     capacity that the zvec is initialized with
@@ -22,18 +23,20 @@ ZVec * zvec_create(size_t cap)
  * return:          a new zvec
  * 
  * side effects:    NONE
-**********************************************************************/
+ ******************************************************************************/
 {
     ZVec * zv = malloc(sizeof(ZVec));
+    assert(cap != 0);
     zv->size = 0;
     zv->cap  = cap;
     zv->data = malloc(cap * sizeof(TYPE));
     zv->cap_multiplier = 2;
+
     return zv;
 }
 
 void zvec_destroy(ZVec * zv)
-/**********************************************************************
+/*******************************************************************************
  * description:     destroy a ZVec
  *
  * arguments:       zv  
@@ -41,7 +44,7 @@ void zvec_destroy(ZVec * zv)
  * return:          NONE
  * 
  * side effects:    zv is now free()d.
-**********************************************************************/
+ ******************************************************************************/
 {
     zvec_check(zv, __FILE__, __LINE__, NULL);
     free(zv->data);
@@ -50,44 +53,27 @@ void zvec_destroy(ZVec * zv)
 }
 
 void zvec_extend(ZVec * zv, size_t new_size)
-/**********************************************************************
+/*******************************************************************************
  * description:     extend zvec by a multiplier
  *
- * arguments:       zv      zvec to extend the data of
- *                  mul     multiplier to 
+ * arguments:       zv          zvec to extend the data of
+ *                  new_size    new size to extend zv to 
  *
  * return:          NONE
  * 
- * side effects:    zv data has loc 
-**********************************************************************/
+ * side effects:    zv is extended to new size
+ ******************************************************************************/
 {
+    
     zvec_check(zv, __FILE__, __LINE__, NULL);
-    zv->data = realloc(zv->data, new_size);
-}
-
-void zvec_error(const char * msg, const char * file, uint16_t line)
-/**********************************************************************
- * description:     error message and then exit
- *
- * arguments:       msg     message to be displayed
- *                  file    file in which error occured (likely 
- *                          __FILE__)
- *                  line    line on which error occured (likely 
- *                          __LINE__)
- *                  
- *
- * return:          NONE
- * 
- * side effects:    program exits
-**********************************************************************/
-{
-    fprintf(stderr, "zvec ERROR: file %s line %d: %s", file, line, msg);
-    exit(EXIT_FAILURE);
+    zv->data = (TYPE *) realloc(zv->data, new_size * sizeof(TYPE));
+    zvec_check(zv, __FILE__, __LINE__, NULL);
+    zv->cap = new_size;
 }
 
 void zvec_check(ZVec * zv, const char * file, uint16_t line,
                 const char * msg)
-/**********************************************************************
+/*******************************************************************************
  * description:     check a ZVec for whether it's NULL or not, error
  *                  out if NULL.
  *
@@ -99,64 +85,22 @@ void zvec_check(ZVec * zv, const char * file, uint16_t line,
  * return:          NONE
  * 
  * side effects:    may exit failure. 
- **********************************************************************/
+ ******************************************************************************/
 {
-    if(zv == NULL)
+    if(zv == NULL || zv->data == NULL || zv->size > zv->cap)
     {
-        if(msg != NULL)
+        fprintf(stderr, "ZVec error: file %s line %u\n", file, line);
+        if(msg)
             fprintf(stderr, "%s\n", msg);
-        zvec_error("NULL zvector", file, line);
     }
-    if(zv->data == NULL)
-    {
-        if(msg != NULL)
-            fprintf(stderr, "%s\n", msg);
-        zvec_error("NULL data", file, line);
-    }
-    if(zv->size > zv->cap)
-    {
-        if(msg != NULL)
-            fprintf(stderr, "%s\n", msg);
-        zvec_error("capacity-size mismatch", file, line);
-    }
+    assert(zv != NULL);
+    assert(zv->data != NULL);
+    assert(zv->size <= zv->cap);
 }
 
-void zvec_zero_fill(ZVec * zv, size_t begin, size_t end)
-/**********************************************************************
- * description:     fills zvec with zero from index begin to one
- *                  before end
- *                  for example, to fill all unused data you would use
- *                  zvec_zero_fill(zv, zv->size, zv->cap)
- *
- * arguments:       zv      zvec to zero fill
- *                  begin   address to start filling at
- *                  end     address to stop filling at
- *
- * return:          NONE
- * 
- * side effects:    zv is filled from begin to end
-**********************************************************************/
-{
-    size_t i = 0;
-
-    zvec_check(zv, __FILE__, __LINE__, NULL);
-
-    if(begin > zv->cap || end > zv->cap)
-        zvec_error("tried to zero-fill past capacity", 
-                    __FILE__, __LINE__);
-    if(begin > end)
-        zvec_error("zero_fill begin greater than zero_fill end",
-                    __FILE__, __LINE__);
-
-    for(i = begin; i < end; ++i)
-        zv->data[i] = ZERO;
-
-    if(zv->size < end)
-            zv->size = end;
-}
 
 TYPE zvec_at(ZVec * zv, size_t loc)
-/**********************************************************************
+/*******************************************************************************
  * description:     retrieve data from zv at location loc
  *
  * arguments:       zv      zvec to retrieve from
@@ -165,7 +109,7 @@ TYPE zvec_at(ZVec * zv, size_t loc)
  * return:          the data at location loc
  * 
  * side effects:    NONE
-**********************************************************************/
+ ******************************************************************************/
 {
     zvec_check(zv, __FILE__, __LINE__, NULL);
     if(loc < zv->size)
@@ -180,43 +124,49 @@ TYPE zvec_at(ZVec * zv, size_t loc)
     }
 }
 
-void zvec_put(ZVec * zv, TYPE d, size_t loc)
-/**********************************************************************
+size_t zvec_push(ZVec * zv, TYPE d)
+/*******************************************************************************
+ * description:     Push some data into the next free slot of zvec
+ *
+ * arguments:       zv      zvec to push onto
+ *                  d       data to be pushed
+ *
+ * return:          NONE
+ * 
+ * side effects:    data is added to zvec; size may extend.
+ ******************************************************************************/
+{
+    zvec_check(zv, __FILE__, __LINE__, NULL);
+    if(zv->size >= zv->cap)
+    {
+        zvec_extend(zv, zv->cap * zv->cap_multiplier);
+    }
+    zv->data[zv->size++] = d;
+
+    return zv->size - 1;
+}
+
+void zvec_put(ZVec * zv, size_t loc, TYPE d)
+/*******************************************************************************
  * description:     put d at loc in zv. 
  *
- * arguments:       zv      zvec to put data in
- *                  d       data to put in  
+ * arguments:      zv      zvec to put data in
  *                  loc     location in array to put in
+ *                  d       data to put in  
  *
  * return:          NONE
  * 
  * side effects:    zv data has loc 
-**********************************************************************/
+ ******************************************************************************/
 {
     zvec_check(zv, __FILE__, __LINE__, NULL);
-    if(loc > zv->cap)
-    {
-        if(zv->cap > SIZE_MAX / zv->cap_multiplier)
-        {
-                zvec_extend(zv, (size_t) (zv->cap * zv->cap_multiplier));
-                zvec_check(zv, __FILE__, __LINE__, NULL);
-        }
-        else
-        {
-            zvec_error("Tried to extend zvector cap too far, did you"
-                       " set the cap multiplier too high?",
-                       __FILE__, __LINE__);
-        }
-    }
+    assert(loc < zv->size);
+
     zv->data[loc] = d;
-    if(zv->size < loc)
-    {
-        zv->size = loc;
-    }
 }
 
 size_t zvec_size(ZVec * zv)
-/**********************************************************************
+/*******************************************************************************
  * description:     get size of a zvec
  *
  * arguments:       zv      zvec to get the size of
@@ -224,7 +174,7 @@ size_t zvec_size(ZVec * zv)
  * return:          size of zv
  * 
  * side effects:    NONE
-**********************************************************************/
+ ******************************************************************************/
 {
     return zv->size;
 }
